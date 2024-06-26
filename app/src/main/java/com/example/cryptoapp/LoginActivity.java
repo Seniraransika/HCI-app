@@ -16,21 +16,24 @@ import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FirebaseFirestore;
+import android.util.Log;
 
 public class LoginActivity extends AppCompatActivity {
 
-    EditText loginUsername, loginPassword;
+    EditText loginEmail, loginPassword;
     Button loginButton;
     TextView signupRedirectText;
     FirebaseAuth mAuth;
     FirebaseFirestore db;
+
+    private static final String TAG = "LoginActivity";
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_login);
 
-        loginUsername = findViewById(R.id.login_username);
+        loginEmail = findViewById(R.id.login_email);
         loginPassword = findViewById(R.id.login_password);
         loginButton = findViewById(R.id.login_button);
         signupRedirectText = findViewById(R.id.signupRedirectText);
@@ -41,7 +44,7 @@ public class LoginActivity extends AppCompatActivity {
         loginButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                if (!validateUsername() | !validatePassword()) {
+                if (!validateEmail() | !validatePassword()) {
                     // Do nothing, errors are already shown
                 } else {
                     loginUser();
@@ -58,13 +61,13 @@ public class LoginActivity extends AppCompatActivity {
         });
     }
 
-    private Boolean validateUsername() {
-        String val = loginUsername.getText().toString();
+    private Boolean validateEmail() {
+        String val = loginEmail.getText().toString();
         if (val.isEmpty()) {
-            loginUsername.setError("Username cannot be empty");
+            loginEmail.setError("Email cannot be empty");
             return false;
         } else {
-            loginUsername.setError(null);
+            loginEmail.setError(null);
             return true;
         }
     }
@@ -81,19 +84,23 @@ public class LoginActivity extends AppCompatActivity {
     }
 
     private void loginUser() {
-        String email = loginUsername.getText().toString().trim();
+        String email = loginEmail.getText().toString().trim();
         String password = loginPassword.getText().toString().trim();
+
+        Log.d(TAG, "Attempting to sign in user: " + email);
 
         mAuth.signInWithEmailAndPassword(email, password)
                 .addOnCompleteListener(this, new OnCompleteListener<AuthResult>() {
                     @Override
                     public void onComplete(@NonNull Task<AuthResult> task) {
                         if (task.isSuccessful()) {
+                            Log.d(TAG, "signInWithEmail:success");
                             FirebaseUser user = mAuth.getCurrentUser();
                             if (user != null) {
                                 fetchUserDetails(user.getUid());
                             }
                         } else {
+                            Log.w(TAG, "signInWithEmail:failure", task.getException());
                             Toast.makeText(LoginActivity.this, "Authentication failed.", Toast.LENGTH_SHORT).show();
                         }
                     }
@@ -101,6 +108,8 @@ public class LoginActivity extends AppCompatActivity {
     }
 
     private void fetchUserDetails(String userId) {
+        Log.d(TAG, "Fetching user details for UID: " + userId);
+
         db.collection("users").document(userId).get()
                 .addOnCompleteListener(new OnCompleteListener<DocumentSnapshot>() {
                     @Override
@@ -108,6 +117,8 @@ public class LoginActivity extends AppCompatActivity {
                         if (task.isSuccessful() && task.getResult() != null) {
                             DocumentSnapshot document = task.getResult();
                             if (document.exists()) {
+                                Log.d(TAG, "User document exists");
+
                                 String name = document.getString("name");
                                 String email = document.getString("email");
                                 String username = document.getString("username");
@@ -119,9 +130,11 @@ public class LoginActivity extends AppCompatActivity {
                                 Toast.makeText(LoginActivity.this, "Login successful", Toast.LENGTH_SHORT).show();
                                 startActivity(intent);
                             } else {
+                                Log.d(TAG, "No such document");
                                 Toast.makeText(LoginActivity.this, "User details not found.", Toast.LENGTH_SHORT).show();
                             }
                         } else {
+                            Log.d(TAG, "get failed with ", task.getException());
                             Toast.makeText(LoginActivity.this, "Error fetching user details.", Toast.LENGTH_SHORT).show();
                         }
                     }
