@@ -1,6 +1,8 @@
 package com.example.cryptoapp;
 
+import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
+
 import android.content.Intent;
 import android.os.Bundle;
 import android.view.View;
@@ -8,16 +10,24 @@ import android.widget.Button;
 import android.widget.EditText;
 import android.widget.TextView;
 import android.widget.Toast;
-import com.google.firebase.database.DatabaseReference;
-import com.google.firebase.database.FirebaseDatabase;
+
+import com.google.android.gms.tasks.OnCompleteListener;
+import com.google.android.gms.tasks.Task;
+import com.google.firebase.auth.AuthResult;
+import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.firestore.DocumentReference;
+import com.google.firebase.firestore.FirebaseFirestore;
+
+import java.util.HashMap;
+import java.util.Map;
 
 public class SignupActivity extends AppCompatActivity {
 
     EditText signupName, signupUsername, signupEmail, signupPassword;
     TextView loginRedirectText;
     Button signupButton;
-    FirebaseDatabase database;
-    DatabaseReference reference;
+    FirebaseAuth mAuth;
+    FirebaseFirestore db;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -30,6 +40,9 @@ public class SignupActivity extends AppCompatActivity {
         signupPassword = findViewById(R.id.signup_password);
         loginRedirectText = findViewById(R.id.loginRedirectText);
         signupButton = findViewById(R.id.signup_button);
+
+        mAuth = FirebaseAuth.getInstance();
+        db = FirebaseFirestore.getInstance();
 
         signupButton.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -47,22 +60,44 @@ public class SignupActivity extends AppCompatActivity {
     }
 
     private void registerUser() {
-        database = FirebaseDatabase.getInstance();
-        reference = database.getReference("users");
-
         String name = signupName.getText().toString();
         String email = signupEmail.getText().toString();
         String username = signupUsername.getText().toString();
         String password = signupPassword.getText().toString();
 
         if (validateInput(name, email, username, password)) {
-            HelperClass helperClass = new HelperClass(name, email, username, password);
-            reference.child(username).setValue(helperClass);
-
-            Toast.makeText(SignupActivity.this, "You have signed up successfully!", Toast.LENGTH_SHORT).show();
-            Intent intent = new Intent(SignupActivity.this, LoginActivity.class);
-            startActivity(intent);
+            mAuth.createUserWithEmailAndPassword(email, password)
+                    .addOnCompleteListener(this, new OnCompleteListener<AuthResult>() {
+                        @Override
+                        public void onComplete(@NonNull Task<AuthResult> task) {
+                            if (task.isSuccessful()) {
+                                saveUserToFirestore(name, email, username);
+                            } else {
+                                Toast.makeText(SignupActivity.this, "Authentication failed.", Toast.LENGTH_SHORT).show();
+                            }
+                        }
+                    });
         }
+    }
+
+    private void saveUserToFirestore(String name, String email, String username) {
+        Map<String, Object> user = new HashMap<>();
+        user.put("name", name);
+        user.put("email", email);
+        user.put("username", username);
+
+        db.collection("users").add(user)
+                .addOnCompleteListener(new OnCompleteListener<DocumentReference>() {
+                    @Override
+                    public void onComplete(@NonNull Task<DocumentReference> task) {
+                        if (task.isSuccessful()) {
+                            Toast.makeText(SignupActivity.this, "You have signed up successfully!", Toast.LENGTH_SHORT).show();
+                            navigateToLogin();
+                        } else {
+                            Toast.makeText(SignupActivity.this, "Error saving user.", Toast.LENGTH_SHORT).show();
+                        }
+                    }
+                });
     }
 
     private boolean validateInput(String name, String email, String username, String password) {
