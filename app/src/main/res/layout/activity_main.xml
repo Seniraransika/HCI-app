@@ -85,6 +85,7 @@
                     app:layout_constraintBottom_toBottomOf="parent"
                     app:layout_constraintStart_toStartOf="@+id/textView3"
                     app:layout_constraintTop_toBottomOf="@+id/textView3" />
+
             </androidx.constraintlayout.widget.ConstraintLayout>
 
             <LinearLayout
@@ -381,7 +382,7 @@
                     android:layout_weight="0.2">
 
                     <ImageView
-                        android:id="@+id/imageView14"
+                        android:id="@+id/loginHome"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:src="@drawable/bottom_btn2"
