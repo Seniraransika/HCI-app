@@ -30,7 +30,7 @@
                 android:background="@drawable/blue_background">
 
                 <ImageView
-                    android:id="@+id/imageView"
+                    android:id="@+id/userView"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_margin="16dp"
@@ -44,22 +44,22 @@
                     android:layout_height="wrap_content"
                     android:layout_marginStart="16dp"
                     android:layout_marginTop="8dp"
-                    android:text="Hello Pitter Jackson"
+                    android:text="Hello"
                     android:textColor="@color/white"
                     android:textSize="19sp"
                     android:textStyle="bold"
-                    app:layout_constraintStart_toEndOf="@+id/imageView"
-                    app:layout_constraintTop_toTopOf="@+id/imageView" />
+                    app:layout_constraintStart_toEndOf="@+id/userView"
+                    app:layout_constraintTop_toTopOf="@+id/userView" />
 
                 <TextView
-                    android:id="@+id/textView2"
+                    android:id="@+id/userEmailview"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:text="pitterjackson@gmail.com"
                     android:textColor="@color/white"
                     android:textSize="14sp"
                     android:textStyle="bold"
-                    app:layout_constraintBottom_toBottomOf="@+id/imageView"
+                    app:layout_constraintBottom_toBottomOf="@+id/userView"
                     app:layout_constraintStart_toStartOf="@+id/textView"
                     app:layout_constraintTop_toBottomOf="@+id/textView" />
 
@@ -71,8 +71,8 @@
                     android:text="Your Balance"
                     android:textColor="@color/white"
                     android:textSize="17sp"
-                    app:layout_constraintStart_toStartOf="@+id/imageView"
-                    app:layout_constraintTop_toBottomOf="@+id/imageView" />
+                    app:layout_constraintStart_toStartOf="@+id/userView"
+                    app:layout_constraintTop_toBottomOf="@+id/userView" />
 
                 <TextView
                     android:id="@+id/textView4"
@@ -85,6 +85,19 @@
                     app:layout_constraintBottom_toBottomOf="parent"
                     app:layout_constraintStart_toStartOf="@+id/textView3"
                     app:layout_constraintTop_toBottomOf="@+id/textView3" />
+
+                <TextView
+                    android:id="@+id/userNameview"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="9dp"
+                    android:layout_marginTop="24dp"
+                    android:text=" Pitter Jackson"
+                    android:textColor="#FFFFFF"
+                    app:layout_constraintEnd_toEndOf="parent"
+                    app:layout_constraintHorizontal_bias="0.0"
+                    app:layout_constraintStart_toEndOf="@+id/textView"
+                    app:layout_constraintTop_toTopOf="parent" />
 
             </androidx.constraintlayout.widget.ConstraintLayout>
 

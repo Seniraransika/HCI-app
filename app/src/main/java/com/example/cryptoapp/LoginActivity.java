@@ -71,7 +71,7 @@ public class LoginActivity extends AppCompatActivity {
     }
 
     private void loginUser() {
-        String email = loginEmail.getText().toString();
+        String email = loginEmail.getText().toString().trim(); // Trim to remove leading/trailing spaces
         String password = loginPassword.getText().toString();
 
         if (validateInput(email, password)) {
@@ -87,13 +87,16 @@ public class LoginActivity extends AppCompatActivity {
                                 startActivity(intent);
                                 finish();
                             } else {
-                                Toast.makeText(LoginActivity.this, "Authentication failed.", Toast.LENGTH_SHORT).show();
+                                String errorMessage = task.getException() != null ?
+                                        task.getException().getMessage() : "Authentication failed.";
+                                Toast.makeText(LoginActivity.this, errorMessage, Toast.LENGTH_SHORT).show();
                                 loggingState.setText("Not Logged In");
                             }
                         }
                     });
         }
     }
+
 
     private boolean validateInput(String email, String password) {
         if (email.isEmpty()) {

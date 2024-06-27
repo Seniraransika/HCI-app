@@ -16,6 +16,7 @@ import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.Task;
 import com.google.firebase.auth.AuthResult;
 import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.firestore.DocumentReference;
 import com.google.firebase.firestore.FirebaseFirestore;
 
@@ -63,9 +64,9 @@ public class SignupActivity extends AppCompatActivity {
     }
 
     private void registerUser() {
-        String name = signupName.getText().toString();
+        final String name = signupName.getText().toString();
         String email = signupEmail.getText().toString();
-        String username = signupUsername.getText().toString();
+        final String username = signupUsername.getText().toString();
         String password = signupPassword.getText().toString();
 
         if (validateInput(name, email, username, password)) {
@@ -76,7 +77,11 @@ public class SignupActivity extends AppCompatActivity {
                         public void onComplete(@NonNull Task<AuthResult> task) {
                             progressBar.setVisibility(View.GONE); // Hide the ProgressBar
                             if (task.isSuccessful()) {
-                                saveUserToFirestore(name, email, username);
+                                FirebaseUser user = mAuth.getCurrentUser();
+                                if (user != null) {
+                                    String uid = user.getUid();
+                                    saveUserToFirestore(uid, name, username, user.getEmail());
+                                }
                             } else {
                                 Toast.makeText(SignupActivity.this, "Authentication failed.", Toast.LENGTH_SHORT).show();
                             }
@@ -85,17 +90,18 @@ public class SignupActivity extends AppCompatActivity {
         }
     }
 
-    private void saveUserToFirestore(String name, String email, String username) {
+    private void saveUserToFirestore(String uid, String name, String username, String email) {
         Map<String, Object> user = new HashMap<>();
         user.put("name", name);
-        user.put("email", email);
         user.put("username", username);
+        user.put("email", email);
+        user.put("userId", uid); // Include the UID in the document
 
         progressBar.setVisibility(View.VISIBLE); // Show the ProgressBar
-        db.collection("users").add(user)
-                .addOnCompleteListener(new OnCompleteListener<DocumentReference>() {
+        db.collection("users").document(uid).set(user) // Use UID as document ID
+                .addOnCompleteListener(new OnCompleteListener<Void>() {
                     @Override
-                    public void onComplete(@NonNull Task<DocumentReference> task) {
+                    public void onComplete(@NonNull Task<Void> task) {
                         progressBar.setVisibility(View.GONE); // Hide the ProgressBar
                         if (task.isSuccessful()) {
                             Toast.makeText(SignupActivity.this, "You have signed up successfully!", Toast.LENGTH_SHORT).show();

@@ -3,28 +3,56 @@ package com.example.cryptoapp;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.View;
 import android.widget.ImageView;
+import android.widget.TextView;
+
+import androidx.annotation.NonNull;
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.recyclerview.widget.GridLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.auth.FirebaseUser;
+import com.google.firebase.firestore.DocumentSnapshot;
+import com.google.firebase.firestore.FirebaseFirestore;
+import com.google.firebase.firestore.FirebaseFirestoreException;
+import com.google.firebase.firestore.ListenerRegistration;
 
 import java.util.ArrayList;
 
 public class MainActivity extends AppCompatActivity {
+    private static final String TAG = "MainActivity";
+
     private RecyclerView.Adapter adapter;
     private RecyclerView recyclerView;
+    private TextView userNameTextView, userEmailTextView;
+
+    // Firebase
+    private FirebaseAuth mAuth;
+    private FirebaseFirestore db;
+    private FirebaseUser currentUser;
+    private ListenerRegistration userListener;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
+        // Initialize Firebase
+        mAuth = FirebaseAuth.getInstance();
+        db = FirebaseFirestore.getInstance();
+        currentUser = mAuth.getCurrentUser();
+
+        // Initialize Views
+        userNameTextView = findViewById(R.id.userNameview);
+        userEmailTextView = findViewById(R.id.userEmailview);
+
         recyclerViewInit();
         setupProfileIconClick();
+        fetchUserData();
     }
 
     private void recyclerViewInit() {
@@ -57,8 +85,7 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private boolean isUserLoggedIn() {
-        // Implement your logic to check if the user is logged in
-        return true; // Replace with actual check
+        return (currentUser != null);
     }
 
     private void showLogoutDialog() {
@@ -81,14 +108,49 @@ public class MainActivity extends AppCompatActivity {
                 .show();
     }
 
+
     private void logoutCurrentUser() {
-        // Implement your logic to log out the current user
-        FirebaseAuth.getInstance().signOut();
+        mAuth.signOut();
     }
 
     private void navigateToLogin() {
         Intent intent = new Intent(MainActivity.this, LoginActivity.class);
         startActivity(intent);
         finish();
+    }
+    private void fetchUserData() {
+        if (currentUser != null) {
+            String uid = currentUser.getUid();
+            userListener = db.collection("users").document(uid)
+                    .addSnapshotListener(this, (snapshot, e) -> {
+                        if (e != null) {
+                            Log.w(TAG, "Listen failed.", e);
+                            return;
+                        }
+
+                        if (snapshot != null && snapshot.exists()) {
+                            String userName = snapshot.getString("name");
+                            String userEmail = snapshot.getString("email");
+
+                            // Update UI with user data
+                            userNameTextView.setText(userName);
+                            userEmailTextView.setText(userEmail);
+                        } else {
+                            Log.d(TAG, "Current data: null");
+
+                            userNameTextView.setText("no user name");
+                            userEmailTextView.setText("no user email");
+                        }
+                    });
+        }
+    }
+
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        if (userListener != null) {
+            userListener.remove();
+        }
     }
 }
