@@ -8,6 +8,7 @@ import android.os.Bundle;
 import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
+import android.widget.ProgressBar;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -26,6 +27,7 @@ public class SignupActivity extends AppCompatActivity {
     EditText signupName, signupUsername, signupEmail, signupPassword;
     TextView loginRedirectText;
     Button signupButton;
+    ProgressBar progressBar;
     FirebaseAuth mAuth;
     FirebaseFirestore db;
 
@@ -40,6 +42,7 @@ public class SignupActivity extends AppCompatActivity {
         signupPassword = findViewById(R.id.signup_password);
         loginRedirectText = findViewById(R.id.loginRedirectText);
         signupButton = findViewById(R.id.signup_button);
+        progressBar = findViewById(R.id.progress_bar);
 
         mAuth = FirebaseAuth.getInstance();
         db = FirebaseFirestore.getInstance();
@@ -66,10 +69,12 @@ public class SignupActivity extends AppCompatActivity {
         String password = signupPassword.getText().toString();
 
         if (validateInput(name, email, username, password)) {
+            progressBar.setVisibility(View.VISIBLE); // Show the ProgressBar
             mAuth.createUserWithEmailAndPassword(email, password)
                     .addOnCompleteListener(this, new OnCompleteListener<AuthResult>() {
                         @Override
                         public void onComplete(@NonNull Task<AuthResult> task) {
+                            progressBar.setVisibility(View.GONE); // Hide the ProgressBar
                             if (task.isSuccessful()) {
                                 saveUserToFirestore(name, email, username);
                             } else {
@@ -86,10 +91,12 @@ public class SignupActivity extends AppCompatActivity {
         user.put("email", email);
         user.put("username", username);
 
+        progressBar.setVisibility(View.VISIBLE); // Show the ProgressBar
         db.collection("users").add(user)
                 .addOnCompleteListener(new OnCompleteListener<DocumentReference>() {
                     @Override
                     public void onComplete(@NonNull Task<DocumentReference> task) {
+                        progressBar.setVisibility(View.GONE); // Hide the ProgressBar
                         if (task.isSuccessful()) {
                             Toast.makeText(SignupActivity.this, "You have signed up successfully!", Toast.LENGTH_SHORT).show();
                             navigateToLogin();

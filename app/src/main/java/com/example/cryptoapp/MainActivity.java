@@ -1,13 +1,16 @@
 package com.example.cryptoapp;
 
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.os.Bundle;
 import android.view.View;
 import android.widget.ImageView;
-
+import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.recyclerview.widget.GridLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
+
+import com.google.firebase.auth.FirebaseAuth;
 
 import java.util.ArrayList;
 
@@ -44,9 +47,48 @@ public class MainActivity extends AppCompatActivity {
         profileIcon.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                Intent intent = new Intent(MainActivity.this, LoginActivity.class);
-                startActivity(intent);
+                if (isUserLoggedIn()) {
+                    showLogoutDialog();
+                } else {
+                    navigateToLogin();
+                }
             }
         });
+    }
+
+    private boolean isUserLoggedIn() {
+        // Implement your logic to check if the user is logged in
+        return true; // Replace with actual check
+    }
+
+    private void showLogoutDialog() {
+        new AlertDialog.Builder(this)
+                .setTitle("Already Signed In")
+                .setMessage("You are already signed in. Do you wish to sign out and log in using a different account?")
+                .setPositiveButton("Yes", new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialog, int which) {
+                        logoutCurrentUser();
+                        navigateToLogin();
+                    }
+                })
+                .setNegativeButton("No", new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialog, int which) {
+                        dialog.dismiss();
+                    }
+                })
+                .show();
+    }
+
+    private void logoutCurrentUser() {
+        // Implement your logic to log out the current user
+        FirebaseAuth.getInstance().signOut();
+    }
+
+    private void navigateToLogin() {
+        Intent intent = new Intent(MainActivity.this, LoginActivity.class);
+        startActivity(intent);
+        finish();
     }
 }
