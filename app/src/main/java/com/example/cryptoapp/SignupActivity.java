@@ -155,6 +155,7 @@ public class SignupActivity extends AppCompatActivity {
         }
     }
 
+
     private void saveUserToFirestore(String uid, String name, String username, String email, String imageUrl) {
         Map<String, Object> user = new HashMap<>();
         user.put("name", name);
@@ -183,7 +184,6 @@ public class SignupActivity extends AppCompatActivity {
                     }
                 });
     }
-
     private boolean validateInput(String name, String email, String username, String password) {
         if (name.isEmpty()) {
             signupName.setError("Name cannot be empty");

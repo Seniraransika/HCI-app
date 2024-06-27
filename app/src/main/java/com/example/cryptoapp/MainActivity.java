@@ -14,11 +14,10 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.recyclerview.widget.GridLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
+import com.bumptech.glide.Glide;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
-import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FirebaseFirestore;
-import com.google.firebase.firestore.FirebaseFirestoreException;
 import com.google.firebase.firestore.ListenerRegistration;
 
 import java.util.ArrayList;
@@ -36,6 +35,9 @@ public class MainActivity extends AppCompatActivity {
     private FirebaseUser currentUser;
     private ListenerRegistration userListener;
 
+    private ImageView userImageView;
+
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -49,6 +51,7 @@ public class MainActivity extends AppCompatActivity {
         // Initialize Views
         userNameTextView = findViewById(R.id.userNameview);
         userEmailTextView = findViewById(R.id.userEmailview);
+        userImageView = findViewById(R.id.userView); // Initialize userImageView
 
         recyclerViewInit();
         setupProfileIconClick();
@@ -131,19 +134,34 @@ public class MainActivity extends AppCompatActivity {
                         if (snapshot != null && snapshot.exists()) {
                             String userName = snapshot.getString("name");
                             String userEmail = snapshot.getString("email");
+                            String profileImageURL = snapshot.getString("profileImageUrl");
 
                             // Update UI with user data
-                            userNameTextView.setText(userName);
-                            userEmailTextView.setText(userEmail);
+                            userNameTextView.setText(userName != null ? userName : "No name");
+                            userEmailTextView.setText(userEmail != null ? userEmail : "No email");
+
+                            // Load profile image using Glide
+                            if (profileImageURL!=null) {
+                                Glide.with(MainActivity.this)
+                                        .load(profileImageURL)
+//                                        .placeholder(R.drawable.baseline_person_24)
+//                                        .error(R.drawable.baseline_person_24)
+                                        .into(userImageView);
+                            } else {
+                                userImageView.setImageResource(R.drawable.baseline_person_24);
+                            }
                         } else {
                             Log.d(TAG, "Current data: null");
 
-                            userNameTextView.setText("no user name");
-                            userEmailTextView.setText("no user email");
+                            userNameTextView.setText("No user data");
+                            userEmailTextView.setText("No user data");
                         }
+
                     });
         }
     }
+
+
 
 
     @Override
