@@ -4,10 +4,12 @@ import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 
 import android.content.Intent;
+import android.net.Uri;
 import android.os.Bundle;
 import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
+import android.widget.ImageView;
 import android.widget.ProgressBar;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -17,8 +19,11 @@ import com.google.android.gms.tasks.Task;
 import com.google.firebase.auth.AuthResult;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
-import com.google.firebase.firestore.DocumentReference;
 import com.google.firebase.firestore.FirebaseFirestore;
+import com.google.firebase.firestore.DocumentReference;
+import com.google.firebase.storage.FirebaseStorage;
+import com.google.firebase.storage.StorageReference;
+import com.google.firebase.storage.UploadTask;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -29,8 +34,15 @@ public class SignupActivity extends AppCompatActivity {
     TextView loginRedirectText;
     Button signupButton;
     ProgressBar progressBar;
+    ImageView profileImage;
     FirebaseAuth mAuth;
     FirebaseFirestore db;
+    FirebaseStorage storage;
+    StorageReference storageRef;
+    Uri imageUri;
+    String imageUrl;
+
+    private static final int PICK_IMAGE_REQUEST = 1;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -44,9 +56,12 @@ public class SignupActivity extends AppCompatActivity {
         loginRedirectText = findViewById(R.id.loginRedirectText);
         signupButton = findViewById(R.id.signup_button);
         progressBar = findViewById(R.id.progress_bar);
+        profileImage = findViewById(R.id.profile_image);
 
         mAuth = FirebaseAuth.getInstance();
         db = FirebaseFirestore.getInstance();
+        storage = FirebaseStorage.getInstance();
+        storageRef = storage.getReference();
 
         signupButton.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -61,11 +76,35 @@ public class SignupActivity extends AppCompatActivity {
                 navigateToLogin();
             }
         });
+
+        profileImage.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                openFileChooser();
+            }
+        });
+    }
+
+    private void openFileChooser() {
+        Intent intent = new Intent();
+        intent.setType("image/*");
+        intent.setAction(Intent.ACTION_GET_CONTENT);
+        startActivityForResult(intent, PICK_IMAGE_REQUEST);
+    }
+
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+        if (requestCode == PICK_IMAGE_REQUEST && resultCode == RESULT_OK
+                && data != null && data.getData() != null) {
+            imageUri = data.getData();
+            profileImage.setImageURI(imageUri);
+        }
     }
 
     private void registerUser() {
         final String name = signupName.getText().toString();
-        String email = signupEmail.getText().toString();
+        final String email = signupEmail.getText().toString();
         final String username = signupUsername.getText().toString();
         String password = signupPassword.getText().toString();
 
@@ -80,34 +119,66 @@ public class SignupActivity extends AppCompatActivity {
                                 FirebaseUser user = mAuth.getCurrentUser();
                                 if (user != null) {
                                     String uid = user.getUid();
-                                    saveUserToFirestore(uid, name, username, user.getEmail());
+                                    uploadImageAndSaveData(uid, name, username, email);
                                 }
                             } else {
-                                Toast.makeText(SignupActivity.this, "Authentication failed.", Toast.LENGTH_SHORT).show();
+                                Toast.makeText(SignupActivity.this, "Authentication failed.",
+                                        Toast.LENGTH_SHORT).show();
                             }
                         }
                     });
         }
     }
 
-    private void saveUserToFirestore(String uid, String name, String username, String email) {
+    private void uploadImageAndSaveData(final String uid, final String name, final String username, final String email) {
+        if (imageUri != null) {
+            StorageReference fileRef = storageRef.child("profile_images/" + uid);
+            fileRef.putFile(imageUri)
+                    .addOnSuccessListener(taskSnapshot -> {
+                        Task<Uri> downloadUriTask = taskSnapshot.getStorage().getDownloadUrl();
+                        downloadUriTask.addOnSuccessListener(uri -> {
+                            imageUrl = uri.toString();
+                            saveUserToFirestore(uid, name, username, email, imageUrl);
+                        }).addOnFailureListener(e -> {
+                            Toast.makeText(SignupActivity.this, "Failed to upload image.",
+                                    Toast.LENGTH_SHORT).show();
+                            saveUserToFirestore(uid, name, username, email, null);
+                        });
+                    })
+                    .addOnFailureListener(e -> {
+                        Toast.makeText(SignupActivity.this, "Failed to upload image.",
+                                Toast.LENGTH_SHORT).show();
+                        saveUserToFirestore(uid, name, username, email, null);
+                    });
+        } else {
+            saveUserToFirestore(uid, name, username, email, null);
+        }
+    }
+
+    private void saveUserToFirestore(String uid, String name, String username, String email, String imageUrl) {
         Map<String, Object> user = new HashMap<>();
         user.put("name", name);
         user.put("username", username);
         user.put("email", email);
-        user.put("userId", uid); // Include the UID in the document
+        user.put("userId", uid);
+
+        if (imageUrl != null) {
+            user.put("profileImageUrl", imageUrl);
+        }
 
         progressBar.setVisibility(View.VISIBLE); // Show the ProgressBar
-        db.collection("users").document(uid).set(user) // Use UID as document ID
+        db.collection("users").document(uid).set(user)
                 .addOnCompleteListener(new OnCompleteListener<Void>() {
                     @Override
                     public void onComplete(@NonNull Task<Void> task) {
                         progressBar.setVisibility(View.GONE); // Hide the ProgressBar
                         if (task.isSuccessful()) {
-                            Toast.makeText(SignupActivity.this, "You have signed up successfully!", Toast.LENGTH_SHORT).show();
+                            Toast.makeText(SignupActivity.this, "You have signed up successfully!",
+                                    Toast.LENGTH_SHORT).show();
                             navigateToLogin();
                         } else {
-                            Toast.makeText(SignupActivity.this, "Error saving user.", Toast.LENGTH_SHORT).show();
+                            Toast.makeText(SignupActivity.this, "Error saving user.",
+                                    Toast.LENGTH_SHORT).show();
                         }
                     }
                 });
