@@ -5,12 +5,15 @@ import android.content.Intent;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
+import android.view.ViewGroup;
 import android.widget.ImageView;
 import android.widget.TextView;
 
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.appcompat.widget.AppCompatButton;
+import androidx.constraintlayout.widget.ConstraintLayout;
 import androidx.recyclerview.widget.GridLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
@@ -43,6 +46,19 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
+
+
+        // Find the button by its ID
+        AppCompatButton cryptoValueButton = findViewById(R.id.cryptoValue);
+        // Set an OnClickListener on the button
+        cryptoValueButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                // Create an Intent to start the CurrencyRateView activity
+                Intent intent = new Intent(MainActivity.this, CurrencyRateView.class);
+                startActivity(intent);
+            }
+        });
         // Initialize Firebase
         mAuth = FirebaseAuth.getInstance();
         db = FirebaseFirestore.getInstance();
@@ -64,13 +80,29 @@ public class MainActivity extends AppCompatActivity {
         recyclerView.setLayoutManager(gridLayoutManager);
 
         // Uncomment and complete the following lines if you have the necessary classes
-        // ArrayList<CryptoWallet> cryptoWalletArrayList = new ArrayList<>();
-        // cryptoWalletArrayList.add(new CryptoWallet("BTC", "btc", 2.13, 1.4, 14021.35));
-        // cryptoWalletArrayList.add(new CryptoWallet("ETH", "eth", -1.13, 3.6, 2145.21));
-        // cryptoWalletArrayList.add(new CryptoWallet("XRP", "xrp", -3.14, 2.6, 21463.10));
-        // cryptoWalletArrayList.add(new CryptoWallet("LTC", "ltc", 4.54, 3.5, 5412.46));
-        // adapter = new CryptoWalletAdapter(cryptoWalletArrayList);
-        // recyclerView.setAdapter(adapter);
+         ArrayList<CryptoWallet> cryptoWalletArrayList = new ArrayList<>();
+         cryptoWalletArrayList.add(new CryptoWallet("BTC", "btc", 2.13, 1.4, 14021.35));
+         cryptoWalletArrayList.add(new CryptoWallet("ETH", "eth", -1.13, 3.6, 2145.21));
+         cryptoWalletArrayList.add(new CryptoWallet("XRP", "xrp", -3.14, 2.6, 21463.10));
+         cryptoWalletArrayList.add(new CryptoWallet("LTC", "ltc", 4.54, 3.5, 5412.46));
+         adapter = new RecyclerView.Adapter() {
+             @NonNull
+             @Override
+             public RecyclerView.ViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
+                 return null;
+             }
+
+             @Override
+             public void onBindViewHolder(@NonNull RecyclerView.ViewHolder holder, int position) {
+
+             }
+
+             @Override
+             public int getItemCount() {
+                 return 0;
+             }
+         };
+         recyclerView.setAdapter(adapter);
     }
 
     private void setupProfileIconClick() {

@@ -115,7 +115,7 @@
                     android:orientation="horizontal">
 
                     <androidx.appcompat.widget.AppCompatButton
-                        android:id="@+id/button2"
+                        android:id="@+id/cryptoValue"
                         style="@android:style/Widget.Button"
                         android:layout_width="0dp"
                         android:layout_height="wrap_content"
@@ -128,7 +128,7 @@
                         android:background="@drawable/blue_background2"
                         android:drawableStart="@drawable/send"
                         android:padding="12dp"
-                        android:text="Send"
+                        android:text="See Crypto value"
                         android:textColor="@color/white"
                         android:textSize="18sp" />
 
@@ -428,7 +428,7 @@
                     android:layout_weight="0.2">
 
                     <ImageView
-                        android:id="@+id/imageView16"
+                        android:id="@+id/Currencyrate"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:src="@drawable/bottom_btn3"
