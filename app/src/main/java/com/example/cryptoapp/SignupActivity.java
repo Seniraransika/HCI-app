@@ -85,6 +85,7 @@ public class SignupActivity extends AppCompatActivity {
         });
     }
 
+    // icon to open images to user propfile
     private void openFileChooser() {
         Intent intent = new Intent();
         intent.setType("image/*");
@@ -93,6 +94,8 @@ public class SignupActivity extends AppCompatActivity {
     }
 
     @Override
+
+    // upload image to firebase
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
         if (requestCode == PICK_IMAGE_REQUEST && resultCode == RESULT_OK
@@ -101,7 +104,7 @@ public class SignupActivity extends AppCompatActivity {
             profileImage.setImageURI(imageUri);
         }
     }
-
+// firebase data danava
     private void registerUser() {
         final String name = signupName.getText().toString();
         final String email = signupEmail.getText().toString();
@@ -110,6 +113,8 @@ public class SignupActivity extends AppCompatActivity {
 
         if (validateInput(name, email, username, password)) {
             progressBar.setVisibility(View.VISIBLE); // Show the ProgressBar
+
+            // create new user in firebase auth
             mAuth.createUserWithEmailAndPassword(email, password)
                     .addOnCompleteListener(this, new OnCompleteListener<AuthResult>() {
                         @Override
@@ -129,7 +134,7 @@ public class SignupActivity extends AppCompatActivity {
                     });
         }
     }
-
+// upload image to firestore database and get access url from friebase storage bucket
     private void uploadImageAndSaveData(final String uid, final String name, final String username, final String email) {
         if (imageUri != null) {
             StorageReference fileRef = storageRef.child("profile_images/" + uid);
@@ -155,7 +160,7 @@ public class SignupActivity extends AppCompatActivity {
         }
     }
 
-
+// save data to firestore database
     private void saveUserToFirestore(String uid, String name, String username, String email, String imageUrl) {
         Map<String, Object> user = new HashMap<>();
         user.put("name", name);
@@ -184,6 +189,8 @@ public class SignupActivity extends AppCompatActivity {
                     }
                 });
     }
+
+
     private boolean validateInput(String name, String email, String username, String password) {
         if (name.isEmpty()) {
             signupName.setError("Name cannot be empty");

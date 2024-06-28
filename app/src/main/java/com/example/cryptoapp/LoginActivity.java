@@ -75,8 +75,22 @@ public class LoginActivity extends AppCompatActivity {
         String password = loginPassword.getText().toString();
 
         if (validateInput(email, password)) {
+
+
+
+
+
+
+
+//firebase auth check . firebase authenticator check
             progressBar.setVisibility(View.VISIBLE);
             mAuth.signInWithEmailAndPassword(email, password)
+
+//firebase auth check . firebase authenticator check
+
+
+
+
                     .addOnCompleteListener(this, new OnCompleteListener<AuthResult>() {
                         @Override
                         public void onComplete(@NonNull Task<AuthResult> task) {
