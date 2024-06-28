@@ -128,7 +128,7 @@
                         android:background="@drawable/blue_background2"
                         android:drawableStart="@drawable/send"
                         android:padding="12dp"
-                        android:text="See Crypto value"
+                        android:text="See Usdt value"
                         android:textColor="@color/white"
                         android:textSize="18sp" />
 

@@ -1,6 +1,5 @@
 package com.example.cryptoapp;
 
-import android.content.DialogInterface;
 import android.content.Intent;
 import android.os.Bundle;
 import android.util.Log;
@@ -10,18 +9,20 @@ import android.widget.ImageView;
 import android.widget.TextView;
 
 import androidx.annotation.NonNull;
-import androidx.appcompat.app.AlertDialog;
+import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.AppCompatButton;
-import androidx.constraintlayout.widget.ConstraintLayout;
 import androidx.recyclerview.widget.GridLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.bumptech.glide.Glide;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
+import com.google.firebase.firestore.DocumentReference;
+import com.google.firebase.firestore.DocumentSnapshot;
+import com.google.firebase.firestore.EventListener;
 import com.google.firebase.firestore.FirebaseFirestore;
-import com.google.firebase.firestore.ListenerRegistration;
+import com.google.firebase.firestore.FirebaseFirestoreException;
 
 import java.util.ArrayList;
 
@@ -31,34 +32,18 @@ public class MainActivity extends AppCompatActivity {
     private RecyclerView.Adapter adapter;
     private RecyclerView recyclerView;
     private TextView userNameTextView, userEmailTextView;
+    private ImageView userImageView;
 
     // Firebase
     private FirebaseAuth mAuth;
     private FirebaseFirestore db;
     private FirebaseUser currentUser;
-    private ListenerRegistration userListener;
-
-    private ImageView userImageView;
-
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-
-
-        // Find the button by its ID
-        AppCompatButton cryptoValueButton = findViewById(R.id.cryptoValue);
-        // Set an OnClickListener on the button
-        cryptoValueButton.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                // Create an Intent to start the CurrencyRateView activity
-                Intent intent = new Intent(MainActivity.this, CurrencyRateView.class);
-                startActivity(intent);
-            }
-        });
         // Initialize Firebase
         mAuth = FirebaseAuth.getInstance();
         db = FirebaseFirestore.getInstance();
@@ -67,140 +52,158 @@ public class MainActivity extends AppCompatActivity {
         // Initialize Views
         userNameTextView = findViewById(R.id.userNameview);
         userEmailTextView = findViewById(R.id.userEmailview);
-        userImageView = findViewById(R.id.userView); // Initialize userImageView
+        userImageView = findViewById(R.id.userView);
 
-        recyclerViewInit();
-        setupProfileIconClick();
+        // Fetch user data
         fetchUserData();
+
+        // Initialize RecyclerView
+        recyclerViewInit();
+
+        // Set up buttons
+        setupButtons();
+    }
+
+    private void fetchUserData() {
+        if (currentUser != null) {
+            String userId = currentUser.getUid();
+            DocumentReference userRef = db.collection("users").document(userId);
+            userRef.addSnapshotListener(new EventListener<DocumentSnapshot>() {
+                @Override
+                public void onEvent(@Nullable DocumentSnapshot snapshot, @Nullable FirebaseFirestoreException error) {
+                    if (error != null) {
+                        Log.w(TAG, "Listen failed.", error);
+                        return;
+                    }
+
+                    if (snapshot != null && snapshot.exists()) {
+                        String userName = snapshot.getString("name");
+                        String userEmail = snapshot.getString("email");
+                        String userProfilePic = snapshot.getString("profilePicUrl");
+
+                        userNameTextView.setText(userName);
+                        userEmailTextView.setText(userEmail);
+                        if (userProfilePic != null && !userProfilePic.isEmpty()) {
+                            Glide.with(MainActivity.this)
+                                    .load(userProfilePic)
+                                    .into(userImageView);
+                        }
+                    }
+                }
+            });
+        }
     }
 
     private void recyclerViewInit() {
-        GridLayoutManager gridLayoutManager = new GridLayoutManager(this, 2);
         recyclerView = findViewById(R.id.view);
+        GridLayoutManager gridLayoutManager = new GridLayoutManager(this, 2);
         recyclerView.setLayoutManager(gridLayoutManager);
 
-        // Uncomment and complete the following lines if you have the necessary classes
-         ArrayList<CryptoWallet> cryptoWalletArrayList = new ArrayList<>();
-         cryptoWalletArrayList.add(new CryptoWallet("BTC", "btc", 2.13, 1.4, 14021.35));
-         cryptoWalletArrayList.add(new CryptoWallet("ETH", "eth", -1.13, 3.6, 2145.21));
-         cryptoWalletArrayList.add(new CryptoWallet("XRP", "xrp", -3.14, 2.6, 21463.10));
-         cryptoWalletArrayList.add(new CryptoWallet("LTC", "ltc", 4.54, 3.5, 5412.46));
-         adapter = new RecyclerView.Adapter() {
-             @NonNull
-             @Override
-             public RecyclerView.ViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
-                 return null;
-             }
+        // Sample data
+        ArrayList<CryptoWallet> cryptoWalletArrayList = new ArrayList<>();
+        cryptoWalletArrayList.add(new CryptoWallet("BTC", "btc", 2.13, 1.4, 14021.35));
+        cryptoWalletArrayList.add(new CryptoWallet("ETH", "eth", -1.13, 3.6, 2145.21));
+        cryptoWalletArrayList.add(new CryptoWallet("XRP", "xrp", -3.14, 2.6, 21463.10));
+        cryptoWalletArrayList.add(new CryptoWallet("LTC", "ltc", 4.54, 3.5, 5412.46));
 
-             @Override
-             public void onBindViewHolder(@NonNull RecyclerView.ViewHolder holder, int position) {
-
-             }
-
-             @Override
-             public int getItemCount() {
-                 return 0;
-             }
-         };
-         recyclerView.setAdapter(adapter);
+        adapter = new CryptoWalletAdapter(cryptoWalletArrayList);
+        recyclerView.setAdapter(adapter);
     }
 
-    private void setupProfileIconClick() {
-        ImageView profileIcon = findViewById(R.id.loginHome); // Assuming the profile icon is imageView
-        profileIcon.setOnClickListener(new View.OnClickListener() {
+    private void setupButtons() {
+        AppCompatButton cryptoValueButton = findViewById(R.id.cryptoValue);
+        cryptoValueButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                if (isUserLoggedIn()) {
-                    showLogoutDialog();
-                } else {
-                    navigateToLogin();
-                }
+                Intent intent = new Intent(MainActivity.this, CurrencyRateView.class);
+                startActivity(intent);
             }
         });
     }
 
-    private boolean isUserLoggedIn() {
-        return (currentUser != null);
-    }
+    // Sample CryptoWallet class and Adapter
+    class CryptoWallet {
+        String name;
+        String symbol;
+        double change;
+        double volume;
+        double price;
 
-    private void showLogoutDialog() {
-        new AlertDialog.Builder(this)
-                .setTitle("Already Signed In")
-                .setMessage("You are already signed in. Do you wish to sign out and log in using a different account?")
-                .setPositiveButton("Yes", new DialogInterface.OnClickListener() {
-                    @Override
-                    public void onClick(DialogInterface dialog, int which) {
-                        logoutCurrentUser();
-                        navigateToLogin();
-                    }
-                })
-                .setNegativeButton("No", new DialogInterface.OnClickListener() {
-                    @Override
-                    public void onClick(DialogInterface dialog, int which) {
-                        dialog.dismiss();
-                    }
-                })
-                .show();
-    }
+        public CryptoWallet(String name, String symbol, double change, double volume, double price) {
+            this.name = name;
+            this.symbol = symbol;
+            this.change = change;
+            this.volume = volume;
+            this.price = price;
+        }
 
+        // Getters
+        public String getName() {
+            return name;
+        }
 
-    private void logoutCurrentUser() {
-        mAuth.signOut();
-    }
+        public String getSymbol() {
+            return symbol;
+        }
 
-    private void navigateToLogin() {
-        Intent intent = new Intent(MainActivity.this, LoginActivity.class);
-        startActivity(intent);
-        finish();
-    }
-    private void fetchUserData() {
-        if (currentUser != null) {
-            String uid = currentUser.getUid();
-            userListener = db.collection("users").document(uid)
-                    .addSnapshotListener(this, (snapshot, e) -> {
-                        if (e != null) {
-                            Log.w(TAG, "Listen failed.", e);
-                            return;
-                        }
+        public double getChange() {
+            return change;
+        }
 
-                        if (snapshot != null && snapshot.exists()) {
-                            String userName = snapshot.getString("name");
-                            String userEmail = snapshot.getString("email");
-                            String profileImageURL = snapshot.getString("profileImageUrl");
+        public double getVolume() {
+            return volume;
+        }
 
-                            // Update UI with user data
-                            userNameTextView.setText(userName != null ? userName : "No name");
-                            userEmailTextView.setText(userEmail != null ? userEmail : "No email");
-
-                            // Load profile image using Glide
-                            if (profileImageURL!=null) {
-                                Glide.with(MainActivity.this)
-                                        .load(profileImageURL)
-//                                        .placeholder(R.drawable.baseline_person_24)
-//                                        .error(R.drawable.baseline_person_24)
-                                        .into(userImageView);
-                            } else {
-                                userImageView.setImageResource(R.drawable.baseline_person_24);
-                            }
-                        } else {
-                            Log.d(TAG, "Current data: null");
-
-                            userNameTextView.setText("No user data");
-                            userEmailTextView.setText("No user data");
-                        }
-
-                    });
+        public double getPrice() {
+            return price;
         }
     }
 
+    class CryptoWalletAdapter extends RecyclerView.Adapter<CryptoWalletAdapter.ViewHolder> {
+        private ArrayList<CryptoWallet> cryptoWalletList;
 
+        CryptoWalletAdapter(ArrayList<CryptoWallet> cryptoWalletList) {
+            this.cryptoWalletList = cryptoWalletList;
+        }
 
+        @NonNull
+        @Override
+        public ViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
+            View view = getLayoutInflater().inflate(R.layout.crypto_item, parent, false);
+            return new ViewHolder(view);
+        }
 
-    @Override
-    protected void onDestroy() {
-        super.onDestroy();
-        if (userListener != null) {
-            userListener.remove();
+        @Override
+        public void onBindViewHolder(@NonNull ViewHolder holder, int position) {
+            CryptoWallet currentItem = cryptoWalletList.get(position);
+
+            holder.nameTextView.setText(currentItem.getName());
+            holder.symbolTextView.setText(currentItem.getSymbol());
+            holder.changeTextView.setText(String.valueOf(currentItem.getChange()));
+            holder.volumeTextView.setText(String.valueOf(currentItem.getVolume()));
+            holder.priceTextView.setText(String.valueOf(currentItem.getPrice()));
+        }
+
+        @Override
+        public int getItemCount() {
+            return cryptoWalletList.size();
+        }
+
+        class ViewHolder extends RecyclerView.ViewHolder {
+            TextView nameTextView;
+            TextView symbolTextView;
+            TextView changeTextView;
+            TextView volumeTextView;
+            TextView priceTextView;
+
+            ViewHolder(View itemView) {
+                super(itemView);
+                nameTextView = itemView.findViewById(R.id.crypto_name);
+                symbolTextView = itemView.findViewById(R.id.crypto_symbol);
+                changeTextView = itemView.findViewById(R.id.crypto_change);
+                volumeTextView = itemView.findViewById(R.id.crypto_volume);
+                priceTextView = itemView.findViewById(R.id.crypto_price);
+            }
         }
     }
 }

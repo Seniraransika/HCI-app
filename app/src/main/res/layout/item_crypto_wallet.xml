@@ -1,0 +1,28 @@
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:padding="16dp">
+
+    <TextView
+        android:id="@+id/cryptoName"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Crypto Name"
+        android:textSize="16sp"
+        android:textStyle="bold" />
+
+    <TextView
+        android:id="@+id/cryptoSymbol"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Crypto Symbol"
+        android:textSize="14sp" />
+
+    <TextView
+        android:id="@+id/cryptoPrice"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Crypto Price"
+        android:textSize="14sp" />
+</LinearLayout>
